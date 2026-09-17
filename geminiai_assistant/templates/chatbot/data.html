@@ -1,0 +1,524 @@
+
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>Gemini AI Assistant</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f7fb;
+            height: 100vh;
+        }
+
+        .app {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* SIDEBAR */
+
+        .sidebar {
+            width: 240px;
+            background: #202123;
+            color: white;
+            padding: 20px;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 30px;
+        }
+
+        .sidebar a {
+            display: block;
+            text-decoration: none;
+            color: white;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+        }
+
+        .sidebar a:hover {
+            background: #343541;
+        }
+
+        /* MAIN AREA */
+
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* HEADER */
+
+        .header {
+            height: 65px;
+            background: white;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 25px;
+        }
+
+        .header h2 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .user {
+            color: #555;
+        }
+
+        .logout {
+            margin-left: 15px;
+            text-decoration: none;
+            color: #e74c3c;
+        }
+
+        /* CHAT AREA */
+
+        .chat-area {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .welcome {
+            text-align: center;
+            margin-top: 80px;
+            color: #555;
+        }
+
+        .welcome h1 {
+            color: #222;
+        }
+
+        /* MESSAGES */
+
+        .message {
+            max-width: 750px;
+            margin: 20px auto;
+            padding: 15px 20px;
+            border-radius: 12px;
+            line-height: 1.6;
+        }
+
+        .user-message {
+            background: #dbeafe;
+            text-align: right;
+        }
+
+        .ai-message {
+            background: white;
+            border: 1px solid #ddd;
+        }
+
+        .message strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        /* INPUT AREA */
+
+        .input-area {
+            background: white;
+            border-top: 1px solid #ddd;
+            padding: 20px;
+        }
+
+        .input-box {
+            max-width: 800px;
+            margin: auto;
+            display: flex;
+            gap: 10px;
+        }
+
+        #message {
+            flex: 1;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            font-size: 16px;
+            outline: none;
+        }
+
+        #send {
+            padding: 0 22px;
+            border: none;
+            border-radius: 10px;
+            background: #2563eb;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #send:hover {
+            background: #1d4ed8;
+        }
+
+        #send:disabled {
+            background: #999;
+            cursor: not-allowed;
+        }
+
+        .thinking {
+            text-align: center;
+            color: #777;
+            margin: 10px;
+        }
+
+        /* MOBILE */
+
+        @media (max-width: 700px) {
+
+            .sidebar {
+                width: 180px;
+            }
+
+            .chat-area {
+                padding: 15px;
+            }
+
+            .message {
+                max-width: 100%;
+            }
+
+            .header {
+                padding: 0 12px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+<div class="app">
+
+    <!-- SIDEBAR -->
+
+    <div class="sidebar">
+
+        <div class="logo">
+            🤖 Gemini AI
+        </div>
+
+        <a href="/chatbot/data/">
+            💬 New Chat
+        </a>
+
+        <a href="/chatbot/history/">
+            📚 Chat History
+        </a>
+
+        <a href="/chatbot/logout/">
+            🚪 Logout
+        </a>
+
+    </div>
+
+
+    <!-- MAIN -->
+
+    <div class="main">
+
+        <!-- HEADER -->
+
+        <div class="header">
+
+            <h2>
+                Gemini AI Assistant
+            </h2>
+
+            <div class="user">
+
+                👤 {{ request.user.username }}
+
+                <a
+                    href="/chatbot/logout/"
+                    class="logout"
+                >
+                    Logout
+                </a>
+
+            </div>
+
+        </div>
+
+
+        <!-- CHAT AREA -->
+
+        <div
+            class="chat-area"
+            id="chatArea"
+        >
+
+            <div
+                class="welcome"
+                id="welcome"
+            >
+
+                <h1>
+                    👋 Hello, {{ request.user.username }}!
+                </h1>
+
+                <p>
+                    Ask Gemini anything.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <!-- INPUT -->
+
+        <div class="input-area">
+
+            <div class="input-box">
+
+                <input
+                    type="text"
+                    id="message"
+                    placeholder="Ask Gemini anything..."
+                    autocomplete="off"
+                >
+
+                <button id="send">
+                    ➤ Send
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+    function getCookie(name) {
+
+        let cookieValue = null;
+
+        if (document.cookie && document.cookie !== '') {
+
+            const cookies = document.cookie.split(';');
+
+            for (let cookie of cookies) {
+
+                cookie = cookie.trim();
+
+                if (cookie.startsWith(name + '=')) {
+
+                    cookieValue = decodeURIComponent(
+                        cookie.substring(name.length + 1)
+                    );
+
+                    break;
+                }
+            }
+        }
+
+        return cookieValue;
+    }
+
+
+    const messageInput =
+        document.getElementById("message");
+
+    const sendButton =
+        document.getElementById("send");
+
+    const chatArea =
+        document.getElementById("chatArea");
+
+    const welcome =
+        document.getElementById("welcome");
+
+
+    function addMessage(sender, text, type) {
+
+        if (welcome) {
+            welcome.remove();
+        }
+
+        const messageDiv =
+            document.createElement("div");
+
+        messageDiv.className =
+            "message " + type;
+
+        const strong =
+            document.createElement("strong");
+
+        strong.textContent = sender;
+
+        const content =
+            document.createElement("div");
+
+        content.textContent = text;
+
+        messageDiv.appendChild(strong);
+
+        messageDiv.appendChild(content);
+
+        chatArea.appendChild(messageDiv);
+
+        chatArea.scrollTop =
+            chatArea.scrollHeight;
+    }
+
+
+    async function sendMessage() {
+
+        const message =
+            messageInput.value.trim();
+
+        if (!message) {
+            return;
+        }
+
+
+        addMessage(
+            "🧑 You",
+            message,
+            "user-message"
+        );
+
+
+        messageInput.value = "";
+
+        sendButton.disabled = true;
+
+        sendButton.textContent =
+            "Thinking...";
+
+
+        const thinking =
+            document.createElement("div");
+
+        thinking.className =
+            "thinking";
+
+        thinking.textContent =
+            "🤖 Gemini is thinking...";
+
+        chatArea.appendChild(thinking);
+
+
+        try {
+
+            const response =
+                await fetch(
+                    "/chatbot/chat/",
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json",
+
+                            "X-CSRFToken":
+                                getCookie("csrftoken")
+                        },
+
+                        body: JSON.stringify({
+                            message: message
+                        })
+                    }
+                );
+
+
+            const data =
+                await response.json();
+
+
+            thinking.remove();
+
+
+            if (data.ai_response) {
+
+                addMessage(
+                    "🤖 Gemini",
+                    data.ai_response,
+                    "ai-message"
+                );
+
+            } else {
+
+                addMessage(
+                    "❌ Error",
+                    data.error ||
+                    data.detail ||
+                    "Unknown error",
+                    "ai-message"
+                );
+            }
+
+
+        } catch (error) {
+
+            thinking.remove();
+
+            addMessage(
+                "❌ Error",
+                "Unable to connect to the server.",
+                "ai-message"
+            );
+
+        }
+
+
+        sendButton.disabled = false;
+
+        sendButton.textContent =
+            "➤ Send";
+    }
+
+
+    sendButton.addEventListener(
+        "click",
+        sendMessage
+    );
+
+
+    messageInput.addEventListener(
+        "keydown",
+        function(event) {
+
+            if (
+                event.key === "Enter" &&
+                !event.shiftKey
+            ) {
+
+                event.preventDefault();
+
+                sendMessage();
+            }
+
+        }
+    );
+
+</script>
+
+</body>
+
+</html>
