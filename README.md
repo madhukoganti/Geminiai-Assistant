@@ -2,6 +2,10 @@
 
 A Django-based AI chatbot powered by the Gemini API. The application provides user authentication, personalized chat history, input validation, and a responsive chatbot interface.
 
+## Screenshot
+
+![Gemini AI Assistant](screenshot.png)
+
 ## Features
 
 * Gemini AI chatbot integration
